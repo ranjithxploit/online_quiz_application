@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <title>Admin Login - Quiz App</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #1e3a8a 0%, #312e81 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .auth-container {
+            width: 100%;
+            max-width: 420px;
+        }
+
+        .auth-card {
+            background: white;
+            border-radius: 16px;
+            padding: 48px 40px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 32px;
+            justify-content: center;
+        }
+
+        .logo-icon {
+            width: 32px;
+            height: 32px;
+            background: linear-gradient(135deg, #1e3a8a 0%, #312e81 100%);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 18px;
+            color: white;
+        }
+
+        .logo-text {
+            font-size: 20px;
+            font-weight: 700;
+            color: #1a202c;
+            letter-spacing: -0.02em;
+        }
+
+        .admin-badge {
+            background: linear-gradient(135deg, #1e3a8a 0%, #312e81 100%);
+            color: white;
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            display: inline-block;
+            margin-left: 8px;
+            letter-spacing: 0.5px;
+        }
+
+        .heading {
+            font-size: 28px;
+            font-weight: 700;
+            color: #1a202c;
+            margin-bottom: 8px;
+            text-align: center;
+            letter-spacing: -0.02em;
+        }
+
+        .subheading {
+            font-size: 15px;
+            color: #718096;
+            margin-bottom: 32px;
+            text-align: center;
+            font-weight: 400;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 14px;
+            font-weight: 600;
+            color: #2d3748;
+            margin-bottom: 8px;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 12px 16px;
+            background: #f7fafc;
+            border: 2px solid #e2e8f0;
+            border-radius: 10px;
+            color: #2d3748;
+            font-size: 15px;
+            font-family: 'Inter', sans-serif;
+            transition: all 0.2s ease;
+            font-weight: 400;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: #1e3a8a;
+            background: white;
+            box-shadow: 0 0 0 4px rgba(30, 58, 138, 0.1);
+        }
+
+        .form-input::placeholder {
+            color: #a0aec0;
+        }
+
+        .submit-btn {
+            width: 100%;
+            padding: 14px 16px;
+            background: linear-gradient(135deg, #1e3a8a 0%, #312e81 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-family: 'Inter', sans-serif;
+            letter-spacing: -0.01em;
+            margin-top: 8px;
+        }
+
+        .submit-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(30, 58, 138, 0.4);
+        }
+
+        .submit-btn:active {
+            transform: translateY(0);
+        }
+
+        .auth-toggle {
+            text-align: center;
+            font-size: 14px;
+            color: #718096;
+            margin-top: 24px;
+        }
+
+        .auth-toggle-link {
+            color: #1e3a8a;
+            cursor: pointer;
+            font-weight: 600;
+            text-decoration: none;
+            transition: color 0.2s;
+        }
+
+        .auth-toggle-link:hover {
+            color: #312e81;
+        }
+
+        .error-message {
+            background: #fed7d7;
+            border: 2px solid #fc8181;
+            color: #c53030;
+            padding: 12px 16px;
+            border-radius: 10px;
+            font-size: 14px;
+            margin-bottom: 20px;
+            display: none;
+            font-weight: 500;
+        }
+
+        .error-message.show {
+            display: block;
+        }
+
+        .success-message {
+            background: #c6f6d5;
+            border: 2px solid #68d391;
+            color: #2f855a;
+            padding: 12px 16px;
+            border-radius: 10px;
+            font-size: 14px;
+            margin-bottom: 20px;
+            display: none;
+            font-weight: 500;
+        }
+
+        .success-message.show {
+            display: block;
+        }
+
+        .student-link {
+            text-align: center;
+            margin-top: 16px;
+            padding-top: 16px;
+            border-top: 1px solid #e2e8f0;
+        }
+
+        .student-link a {
+            color: #718096;
+            font-size: 13px;
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+        .student-link a:hover {
+            color: #1e3a8a;
+        }
+
+        .auth-form {
+            display: none;
+        }
+
+        .auth-form.active {
+            display: block;
+        }
+
+        .secret-hint {
+            font-size: 12px;
+            color: #a0aec0;
+            margin-top: 4px;
+            font-style: italic;
+        }
+
+        @media (max-width: 480px) {
+            .auth-card {
+                padding: 32px 24px;
+            }
+
+            .heading {
+                font-size: 24px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="auth-container">
+        <div class="auth-card">
+            <div class="logo">
+                <div class="logo-icon">Q</div>
+                <div class="logo-text">Quiz App</div>
+                <span class="admin-badge">ADMIN</span>
+            </div>
+
+            <!-- Admin Login Form -->
+            <div class="auth-form active" id="loginForm">
+                <h1 class="heading">Admin Portal</h1>
+                <p class="subheading">Sign in to manage quizzes</p>
+
+                <div class="error-message" id="loginError"></div>
+
+                <form onsubmit="handleLogin(event)">
+                    <div class="form-group">
+                        <label class="form-label">Admin Email</label>
+                        <input type="email" class="form-input" id="loginEmail" placeholder="admin@example.com" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Password</label>
+                        <input type="password" class="form-input" id="loginPassword" placeholder="••••••••" required>
+                    </div>
+
+                    <button type="submit" class="submit-btn">Sign In as Admin</button>
+                </form>
+
+                <div class="auth-toggle">
+                    Need an admin account? 
+                    <span class="auth-toggle-link" onclick="switchForm('register')">Register</span>
+                </div>
+
+                <div class="student-link">
+                    <a href="/login">← Student Login</a>
+                </div>
+            </div>
+
+            <!-- Admin Register Form -->
+            <div class="auth-form" id="registerForm">
+                <h1 class="heading">Create Admin</h1>
+                <p class="subheading">Register a new admin account</p>
+
+                <div class="error-message" id="registerError"></div>
+                <div class="success-message" id="registerSuccess"></div>
+
+                <form onsubmit="handleRegister(event)">
+                    <div class="form-group">
+                        <label class="form-label">Full Name</label>
+                        <input type="text" class="form-input" id="registerName" placeholder="Admin Name" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Email Address</label>
+                        <input type="email" class="form-input" id="registerEmail" placeholder="admin@example.com" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Password</label>
+                        <input type="password" class="form-input" id="registerPassword" placeholder="••••••••" minlength="6" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Admin Secret Key</label>
+                        <input type="password" class="form-input" id="adminSecret" placeholder="Enter admin secret" required>
+                        <div class="secret-hint">Use: ADMIN_SECRET_2024</div>
+                    </div>
+
+                    <button type="submit" class="submit-btn">Create Admin Account</button>
+                </form>
+
+                <div class="auth-toggle">
+                    Already have an account? 
+                    <span class="auth-toggle-link" onclick="switchForm('login')">Sign In</span>
+                </div>
+
+                <div class="student-link">
+                    <a href="/login">← Student Login</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function switchForm(formName) {
+            document.getElementById('loginForm').classList.remove('active');
+            document.getElementById('registerForm').classList.remove('active');
+            
+            if (formName === 'login') {
+                document.getElementById('loginForm').classList.add('active');
+                document.getElementById('loginError').classList.remove('show');
+            } else {
+                document.getElementById('registerForm').classList.add('active');
+                document.getElementById('registerError').classList.remove('show');
+                document.getElementById('registerSuccess').classList.remove('show');
+            }
+        }
+
+        function showError(formType, message) {
+            const errorElement = formType === 'login' 
+                ? document.getElementById('loginError')
+                : document.getElementById('registerError');
+            errorElement.textContent = message;
+            errorElement.classList.add('show');
+        }
+
+        function showSuccess(message) {
+            const successElement = document.getElementById('registerSuccess');
+            successElement.textContent = message;
+            successElement.classList.add('show');
+        }
+
+        async function handleLogin(event) {
+            event.preventDefault();
+            
+            const email = document.getElementById('loginEmail').value;
+            const password = document.getElementById('loginPassword').value;
+
+            try {
+                const response = await fetch('/api/admin/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, password })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    // Store admin data
+                    localStorage.setItem('currentUser', JSON.stringify(data.user));
+                    // Redirect to admin dashboard
+                    window.location.href = '/admindashboard.html';
+                } else {
+                    showError('login', data.message);
+                }
+            } catch (error) {
+                showError('login', 'An error occurred. Please try again.');
+            }
+        }
+
+        async function handleRegister(event) {
+            event.preventDefault();
+
+            const email = document.getElementById('registerEmail').value;
+            const password = document.getElementById('registerPassword').value;
+            const fullName = document.getElementById('registerName').value;
+            const adminSecret = document.getElementById('adminSecret').value;
+
+            try {
+                const response = await fetch('/api/admin/register', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, password, fullName, adminSecret })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    showSuccess('Admin account created successfully! Redirecting to login...');
+                    setTimeout(() => switchForm('login'), 2000);
+                } else {
+                    showError('register', data.message);
+                }
+            } catch (error) {
+                showError('register', 'An error occurred. Please try again.');
+            }
+        }
+    </script>
+</body>
+</html>

@@ -14,7 +14,6 @@ public class Response {
         this.selectedOptionIndex = selectedOptionIndex;
     }
 
-    // Getters and Setters
     public int getQuestionIndex() {
         return questionIndex;
     }

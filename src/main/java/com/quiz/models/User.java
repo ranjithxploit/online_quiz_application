@@ -1,52 +1,45 @@
 package com.quiz.models;
 
-import org.bson.types.ObjectId;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.mapping.Document;
 import java.util.Date;
 
+@Document(collection = "users")
 public class User {
-    private ObjectId id;
-    private String username;
-    private String password;
+    @Id
+    private String id;
     private String email;
-    private String role; // "STUDENT" or "ADMIN"
+    private String password;
+    private String fullName;
+    private String role; // "ADMIN" or "STUDENT"
+    private boolean isActive;
     private Date createdAt;
-    private Date lastLogin;
 
     public User() {
+        this.isActive = true;
         this.createdAt = new Date();
+        this.role = "STUDENT"; // Default role
     }
 
-    public User(String username, String password, String email, String role) {
-        this.username = username;
-        this.password = password;
+    public User(String email, String password, String fullName) {
+        this();
         this.email = email;
+        this.password = password;
+        this.fullName = fullName;
+    }
+
+    public User(String email, String password, String fullName, String role) {
+        this(email, password, fullName);
         this.role = role;
-        this.createdAt = new Date();
     }
 
     // Getters and Setters
-    public ObjectId getId() {
+    public String getId() {
         return id;
     }
 
-    public void setId(ObjectId id) {
+    public void setId(String id) {
         this.id = id;
-    }
-
-    public String getUsername() {
-        return username;
-    }
-
-    public void setUsername(String username) {
-        this.username = username;
-    }
-
-    public String getPassword() {
-        return password;
-    }
-
-    public void setPassword(String password) {
-        this.password = password;
     }
 
     public String getEmail() {
@@ -57,12 +50,36 @@ public class User {
         this.email = email;
     }
 
+    public String getPassword() {
+        return password;
+    }
+
+    public void setPassword(String password) {
+        this.password = password;
+    }
+
+    public String getFullName() {
+        return fullName;
+    }
+
+    public void setFullName(String fullName) {
+        this.fullName = fullName;
+    }
+
     public String getRole() {
         return role;
     }
 
     public void setRole(String role) {
         this.role = role;
+    }
+
+    public boolean isActive() {
+        return isActive;
+    }
+
+    public void setActive(boolean active) {
+        isActive = active;
     }
 
     public Date getCreatedAt() {
@@ -73,20 +90,22 @@ public class User {
         this.createdAt = createdAt;
     }
 
-    public Date getLastLogin() {
-        return lastLogin;
+    public boolean isAdmin() {
+        return "ADMIN".equals(this.role);
     }
 
-    public void setLastLogin(Date lastLogin) {
-        this.lastLogin = lastLogin;
+    public boolean isStudent() {
+        return "STUDENT".equals(this.role);
     }
 
     @Override
     public String toString() {
         return "User{" +
-                "username='" + username + '\'' +
+                "id='" + id + '\'' +
                 ", email='" + email + '\'' +
+                ", fullName='" + fullName + '\'' +
                 ", role='" + role + '\'' +
+                ", isActive=" + isActive +
                 '}';
     }
 }

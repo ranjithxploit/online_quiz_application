@@ -1,26 +1,73 @@
 package com.quiz.utils;
 
 import io.github.cdimascio.dotenv.Dotenv;
+import java.io.File;
+import java.io.FileInputStream;
+import java.util.Properties;
 
 public class ConfigLoader {
     private static Dotenv dotenv;
+    private static Properties fallbackProps;
 
     static {
+        // Try dotenv first
         try {
-            dotenv = Dotenv.configure()
-                    .directory(".")
-                    .ignoreIfMissing()
-                    .load();
+            String workDir = System.getProperty("user.dir");
+            System.out.println("[ConfigLoader] Working directory: " + workDir);
+            
+            File envFile = new File(workDir, ".env");
+            System.out.println("[ConfigLoader] Looking for .env at: " + envFile.getAbsolutePath());
+            System.out.println("[ConfigLoader] .env file exists: " + envFile.exists());
+            
+            if (envFile.exists()) {
+                dotenv = Dotenv.configure()
+                        .directory(workDir)
+                        .ignoreIfMissing()
+                        .load();
+                
+                String apiKey = dotenv.get("GEMINI_API_KEY");
+                System.out.println("[ConfigLoader] Dotenv loaded. GEMINI_API_KEY present: " + (apiKey != null && !apiKey.isEmpty()));
+            }
         } catch (Exception e) {
-            System.err.println("Error loading .env file: " + e.getMessage());
+            System.err.println("[ConfigLoader] Dotenv error: " + e.getMessage());
             dotenv = null;
+        }
+        
+        // Fallback: manually read .env as properties
+        if (dotenv == null || get("GEMINI_API_KEY") == null) {
+            try {
+                File envFile = new File(System.getProperty("user.dir"), ".env");
+                if (envFile.exists()) {
+                    fallbackProps = new Properties();
+                    try (FileInputStream fis = new FileInputStream(envFile)) {
+                        fallbackProps.load(fis);
+                    }
+                    System.out.println("[ConfigLoader] Fallback properties loaded");
+                }
+            } catch (Exception e) {
+                System.err.println("[ConfigLoader] Fallback load error: " + e.getMessage());
+            }
         }
     }
 
     public static String get(String key) {
+        // Try dotenv first
         if (dotenv != null) {
-            return dotenv.get(key);
+            String value = dotenv.get(key);
+            if (value != null && !value.isEmpty()) {
+                return value;
+            }
         }
+        
+        // Try fallback properties
+        if (fallbackProps != null) {
+            String value = fallbackProps.getProperty(key);
+            if (value != null && !value.isEmpty()) {
+                return value;
+            }
+        }
+        
+        // Try system environment
         return System.getenv(key);
     }
 

@@ -1,12 +1,17 @@
 package com.quiz.models;
 
 import org.bson.types.ObjectId;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.mapping.Document;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.Date;
 import java.util.List;
 import java.util.ArrayList;
 
+@Document(collection = "quizzes")
 public class Quiz {
-    private ObjectId id;
+    @Id
+    private String id;
     private String title;
     private String description;
     private String category;
@@ -14,7 +19,7 @@ public class Quiz {
     private int totalPoints;
     private int timeLimit; // in minutes
     private Date createdAt;
-    private ObjectId createdBy; // Admin ID
+    private String createdBy; // Admin ID
     private boolean isActive;
 
     public Quiz() {
@@ -41,11 +46,11 @@ public class Quiz {
     }
 
     // Getters and Setters
-    public ObjectId getId() {
+    public String getId() {
         return id;
     }
 
-    public void setId(ObjectId id) {
+    public void setId(String id) {
         this.id = id;
     }
 
@@ -106,11 +111,11 @@ public class Quiz {
         this.createdAt = createdAt;
     }
 
-    public ObjectId getCreatedBy() {
+    public String getCreatedBy() {
         return createdBy;
     }
 
-    public void setCreatedBy(ObjectId createdBy) {
+    public void setCreatedBy(String createdBy) {
         this.createdBy = createdBy;
     }
 

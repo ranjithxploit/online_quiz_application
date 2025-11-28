@@ -15,15 +15,13 @@ public class Attempt {
     private double percentage;
     private Date startedAt;
     private Date completedAt;
-    private int timeTaken; // in seconds
+    private int timeTaken;
     private boolean isCompleted;
-
     public Attempt() {
         this.responses = new ArrayList<>();
         this.startedAt = new Date();
         this.isCompleted = false;
     }
-
     public Attempt(ObjectId studentId, ObjectId quizId) {
         this.studentId = studentId;
         this.quizId = quizId;

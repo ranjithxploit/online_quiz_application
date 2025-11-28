@@ -1,32 +1,30 @@
 package com.quiz.utils;
 
+import com.google.genai.Client;
+import com.google.genai.types.GenerateContentResponse;
 import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.quiz.models.Option;
 import com.quiz.models.QuizQuestion;
-import okhttp3.*;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 
 public class GeminiAPIClient {
-    private static final String API_ENDPOINT = "https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent";
-    private final String apiKey;
-    private final OkHttpClient client;
+    private static final String MODEL_NAME = "gemini-2.5-flash";
+    private final Client client;
     private final Gson gson;
 
     public GeminiAPIClient() {
-        this.apiKey = ConfigLoader.getGeminiApiKey();
-        if (this.apiKey == null || this.apiKey.equals("your_gemini_api_key_here")) {
+        String apiKey = ConfigLoader.getGeminiApiKey();
+        if (apiKey == null || apiKey.isEmpty() || apiKey.equals("your_gemini_api_key_here")) {
             throw new IllegalStateException("Gemini API key not configured. Please update .env file.");
         }
-        this.client = new OkHttpClient.Builder()
-                .connectTimeout(30, TimeUnit.SECONDS)
-                .readTimeout(30, TimeUnit.SECONDS)
-                .build();
+        
+        // Initialize the Google GenAI Client with API key
+        this.client = Client.builder().apiKey(apiKey).build();
         this.gson = new Gson();
     }
 
@@ -57,54 +55,28 @@ public class GeminiAPIClient {
             "  }\n" +
             "]\n\n" +
             "Note: correctAnswer should be the index (0-3) of the correct option.\n" +
-            "Make sure questions are educational, clear, and appropriate for a quiz.",
+            "Make sure questions are educational, clear, and appropriate for a quiz.\n" +
+            "IMPORTANT: Return ONLY the JSON array, no additional text or markdown.",
             numberOfQuestions, topic, difficulty
         );
     }
 
     private String callGeminiAPI(String prompt) throws IOException {
-        JsonObject requestBody = new JsonObject();
-        JsonArray contents = new JsonArray();
-        JsonObject content = new JsonObject();
-        JsonArray parts = new JsonArray();
-        JsonObject part = new JsonObject();
-        
-        part.addProperty("text", prompt);
-        parts.add(part);
-        content.add("parts", parts);
-        contents.add(content);
-        requestBody.add("contents", contents);
-
-        RequestBody body = RequestBody.create(
-                requestBody.toString(),
-                MediaType.parse("application/json")
-        );
-
-        Request request = new Request.Builder()
-                .url(API_ENDPOINT + "?key=" + apiKey)
-                .post(body)
-                .addHeader("Content-Type", "application/json")
-                .build();
-
-        try (okhttp3.Response response = client.newCall(request).execute()) {
-            if (!response.isSuccessful()) {
-                throw new IOException("Gemini API request failed: " + response.code() + " - " + response.message());
+        try {
+            GenerateContentResponse response = client.models.generateContent(
+                MODEL_NAME,
+                prompt,
+                null
+            );
+            
+            String text = response.text();
+            if (text == null || text.isEmpty()) {
+                throw new IOException("Empty response from Gemini API");
             }
             
-            String responseBody = response.body().string();
-            JsonObject jsonResponse = gson.fromJson(responseBody, JsonObject.class);
-            
-            if (jsonResponse.has("candidates") && jsonResponse.getAsJsonArray("candidates").size() > 0) {
-                JsonObject candidate = jsonResponse.getAsJsonArray("candidates").get(0).getAsJsonObject();
-                JsonObject contentObj = candidate.getAsJsonObject("content");
-                JsonArray partsArray = contentObj.getAsJsonArray("parts");
-                
-                if (partsArray.size() > 0) {
-                    return partsArray.get(0).getAsJsonObject().get("text").getAsString();
-                }
-            }
-            
-            throw new IOException("Invalid response from Gemini API");
+            return text;
+        } catch (Exception e) {
+            throw new IOException("Gemini API request failed: " + e.getMessage(), e);
         }
     }
 
@@ -137,6 +109,7 @@ public class GeminiAPIClient {
             }
         } catch (Exception e) {
             System.err.println("Error parsing quiz response: " + e.getMessage());
+            System.err.println("Raw response: " + response);
             // Fallback: create a sample question if parsing fails
             questions.add(createFallbackQuestion(category, difficulty));
         }
@@ -187,8 +160,12 @@ public class GeminiAPIClient {
 
     public boolean testConnection() {
         try {
-            String response = callGeminiAPI("Hello, this is a test. Respond with 'OK'.");
-            return response != null && !response.isEmpty();
+            GenerateContentResponse response = client.models.generateContent(
+                MODEL_NAME,
+                "Hello, respond with OK",
+                null
+            );
+            return response.text() != null && !response.text().isEmpty();
         } catch (Exception e) {
             return false;
         }
