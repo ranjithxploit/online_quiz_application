@@ -632,6 +632,18 @@
             }
 
             try {
+                // Check if user has already completed this quiz
+                const userId = sessionStorage.getItem('userId');
+                const checkResponse = await fetch(`/api/attempts/check/${quizId}/${userId}`);
+                if (checkResponse.ok) {
+                    const checkData = await checkResponse.json();
+                    if (checkData.hasAttempted) {
+                        alert('You have already completed this quiz!');
+                        window.location.href = '/dashboard.html';
+                        return;
+                    }
+                }
+                
                 const response = await fetch(`/api/quizzes/${quizId}`);
                 if (!response.ok) {
                     throw new Error('Quiz not found');
@@ -870,25 +882,31 @@
             document.getElementById('quizSection').style.display = 'none';
             document.getElementById('resultsSection').style.display = 'block';
 
-            // Save attempt to server (optional)
-            saveAttempt(correctCount, wrongCount, skippedCount, earnedPoints, totalPoints, percentage);
+            // Calculate time taken
+            const timeTaken = ((quiz.timeLimit || 30) * 60) - timeRemaining;
+
+            // Save attempt to server
+            saveAttempt(correctCount, wrongCount, skippedCount, earnedPoints, totalPoints, percentage, timeTaken);
         }
 
-        async function saveAttempt(correct, wrong, skipped, earned, total, percentage) {
+        async function saveAttempt(correct, wrong, skipped, earned, total, percentage, timeTaken) {
             try {
                 await fetch('/api/attempts', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         quizId: quizId,
+                        quizTitle: quiz.title,
                         userId: currentUser.id,
+                        userName: currentUser.fullName,
+                        userEmail: currentUser.email,
                         correctAnswers: correct,
                         wrongAnswers: wrong,
                         skippedAnswers: skipped,
                         earnedPoints: earned,
                         totalPoints: total,
                         percentage: percentage,
-                        completedAt: new Date().toISOString()
+                        timeTaken: timeTaken
                     })
                 });
             } catch (error) {

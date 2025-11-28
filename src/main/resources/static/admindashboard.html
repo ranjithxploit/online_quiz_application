@@ -504,6 +504,142 @@
             color: white;
         }
 
+        /* Attempts Table Styles */
+        .attempts-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 16px;
+        }
+
+        .attempts-table th,
+        .attempts-table td {
+            padding: 12px 16px;
+            text-align: left;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .attempts-table th {
+            background: #f7fafc;
+            font-size: 12px;
+            font-weight: 600;
+            color: #4a5568;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .attempts-table td {
+            font-size: 14px;
+            color: #2d3748;
+        }
+
+        .attempts-table tr:hover {
+            background: #f7fafc;
+        }
+
+        .score-badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .score-excellent {
+            background: #c6f6d5;
+            color: #2f855a;
+        }
+
+        .score-good {
+            background: #bee3f8;
+            color: #2c5282;
+        }
+
+        .score-average {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .score-poor {
+            background: #fed7d7;
+            color: #c53030;
+        }
+
+        .time-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 13px;
+            color: #718096;
+        }
+
+        .filter-bar {
+            display: flex;
+            gap: 16px;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+        }
+
+        .filter-input {
+            padding: 8px 12px;
+            border: 1px solid #e2e8f0;
+            border-radius: 6px;
+            font-size: 14px;
+            min-width: 200px;
+        }
+
+        .filter-input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .stats-row {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .stat-card {
+            background: #f7fafc;
+            border-radius: 8px;
+            padding: 16px;
+            text-align: center;
+        }
+
+        .stat-card .stat-value {
+            font-size: 28px;
+            font-weight: 700;
+            color: #1a202c;
+        }
+
+        .stat-card .stat-label {
+            font-size: 12px;
+            color: #718096;
+            margin-top: 4px;
+        }
+
+        .no-data {
+            text-align: center;
+            padding: 40px;
+            color: #a0aec0;
+        }
+
+        .table-wrapper {
+            overflow-x: auto;
+        }
+
+        @media (max-width: 1024px) {
+            .stats-row {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .stats-row {
+                grid-template-columns: 1fr;
+            }
+        }
+
         @media (max-width: 1024px) {
             .main-grid {
                 grid-template-columns: 1fr;
@@ -610,6 +746,14 @@
                 <div id="quizListContainer">
                     <div class="loading">Loading quizzes...</div>
                 </div>
+            </div>
+        </div>
+
+        <!-- User Attempts Section -->
+        <div class="card" style="margin-top: 32px;">
+            <h2 class="card-title">📊 Student Quiz Attempts</h2>
+            <div id="attemptsContainer">
+                <div class="loading">Loading attempts...</div>
             </div>
         </div>
     </div>
@@ -880,6 +1024,149 @@
             }
         }
 
+        // Load all attempts
+        async function loadAttempts() {
+            const container = document.getElementById('attemptsContainer');
+            
+            try {
+                const response = await fetch('/api/attempts/all');
+                const data = await response.json();
+
+                if (data.success && data.attempts.length > 0) {
+                    const attempts = data.attempts;
+                    
+                    // Calculate stats
+                    const totalAttempts = attempts.length;
+                    const avgScore = Math.round(attempts.reduce((sum, a) => sum + (a.percentage || 0), 0) / totalAttempts);
+                    const passedCount = attempts.filter(a => (a.percentage || 0) >= 50).length;
+                    const uniqueUsers = [...new Set(attempts.map(a => a.userId))].length;
+
+                    container.innerHTML = `
+                        <div class="stats-row">
+                            <div class="stat-card">
+                                <div class="stat-value">${totalAttempts}</div>
+                                <div class="stat-label">Total Attempts</div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-value">${avgScore}%</div>
+                                <div class="stat-label">Average Score</div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-value">${passedCount}</div>
+                                <div class="stat-label">Passed (≥50%)</div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-value">${uniqueUsers}</div>
+                                <div class="stat-label">Unique Students</div>
+                            </div>
+                        </div>
+                        
+                        <div class="filter-bar">
+                            <input type="text" class="filter-input" id="searchAttempts" placeholder="🔍 Search by name, email, or quiz..." oninput="filterAttempts()">
+                        </div>
+                        
+                        <div class="table-wrapper">
+                            <table class="attempts-table" id="attemptsTable">
+                                <thead>
+                                    <tr>
+                                        <th>Student</th>
+                                        <th>Quiz</th>
+                                        <th>Score</th>
+                                        <th>Result</th>
+                                        <th>Time Taken</th>
+                                        <th>Date & Time</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${attempts.map(attempt => createAttemptRow(attempt)).join('')}
+                                </tbody>
+                            </table>
+                        </div>
+                    `;
+
+                    // Store attempts for filtering
+                    window.allAttempts = attempts;
+                } else {
+                    container.innerHTML = `
+                        <div class="no-data">
+                            <p>📝 No quiz attempts yet</p>
+                            <p style="font-size: 13px; margin-top: 8px;">Student attempts will appear here once they complete quizzes</p>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                console.error('Error loading attempts:', error);
+                container.innerHTML = `
+                    <div class="no-data">
+                        <p>⚠️ Error loading attempts</p>
+                    </div>
+                `;
+            }
+        }
+
+        function createAttemptRow(attempt) {
+            const percentage = attempt.percentage || 0;
+            let scoreClass = 'score-poor';
+            if (percentage >= 90) scoreClass = 'score-excellent';
+            else if (percentage >= 70) scoreClass = 'score-good';
+            else if (percentage >= 50) scoreClass = 'score-average';
+
+            const timeTaken = attempt.timeTaken || 0;
+            const minutes = Math.floor(timeTaken / 60);
+            const seconds = timeTaken % 60;
+            const timeDisplay = `${minutes}m ${seconds}s`;
+
+            const completedAt = attempt.completedAt ? new Date(attempt.completedAt) : new Date();
+            const dateDisplay = completedAt.toLocaleDateString('en-US', { 
+                year: 'numeric', 
+                month: 'short', 
+                day: 'numeric' 
+            });
+            const timeOfDay = completedAt.toLocaleTimeString('en-US', { 
+                hour: '2-digit', 
+                minute: '2-digit'
+            });
+
+            return `
+                <tr data-name="${(attempt.userName || '').toLowerCase()}" 
+                    data-email="${(attempt.userEmail || '').toLowerCase()}" 
+                    data-quiz="${(attempt.quizTitle || '').toLowerCase()}">
+                    <td>
+                        <div style="font-weight: 600;">${attempt.userName || 'Unknown'}</div>
+                        <div style="font-size: 12px; color: #718096;">${attempt.userEmail || ''}</div>
+                    </td>
+                    <td>${attempt.quizTitle || 'Unknown Quiz'}</td>
+                    <td>
+                        <div style="font-weight: 600;">${attempt.earnedPoints || 0}/${attempt.totalPoints || 0}</div>
+                        <div style="font-size: 12px; color: #718096;">${attempt.correctAnswers || 0} correct, ${attempt.wrongAnswers || 0} wrong</div>
+                    </td>
+                    <td><span class="score-badge ${scoreClass}">${percentage}%</span></td>
+                    <td><span class="time-badge">⏱️ ${timeDisplay}</span></td>
+                    <td>
+                        <div>${dateDisplay}</div>
+                        <div style="font-size: 12px; color: #718096;">${timeOfDay}</div>
+                    </td>
+                </tr>
+            `;
+        }
+
+        function filterAttempts() {
+            const searchTerm = document.getElementById('searchAttempts').value.toLowerCase();
+            const rows = document.querySelectorAll('#attemptsTable tbody tr');
+
+            rows.forEach(row => {
+                const name = row.getAttribute('data-name') || '';
+                const email = row.getAttribute('data-email') || '';
+                const quiz = row.getAttribute('data-quiz') || '';
+
+                if (name.includes(searchTerm) || email.includes(searchTerm) || quiz.includes(searchTerm)) {
+                    row.style.display = '';
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+        }
+
         function handleLogout() {
             localStorage.removeItem('currentUser');
             window.location.href = '/adminlogin.html';
@@ -888,6 +1175,7 @@
         // Initialize
         checkAuth();
         loadQuizzes();
+        loadAttempts();
     </script>
 </body>
 </html>

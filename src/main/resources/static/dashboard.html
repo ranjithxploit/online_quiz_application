@@ -227,6 +227,44 @@
             box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
         }
 
+        .start-btn:disabled {
+            background: #a0aec0;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .completed-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 16px;
+            background: #c6f6d5;
+            color: #2f855a;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        .completed-score {
+            background: #2f855a;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+        }
+
+        .quiz-card.completed {
+            border-color: #68d391;
+            background: linear-gradient(135deg, #f0fff4 0%, #ffffff 100%);
+        }
+
+        .quiz-card.completed:hover {
+            transform: none;
+            box-shadow: none;
+            cursor: default;
+        }
+
         .empty-state {
             text-align: center;
             padding: 80px 20px;
@@ -300,6 +338,7 @@
 
     <script>
         let currentUser = null;
+        let userAttempts = {}; // Store user's quiz attempts
 
         // Check authentication
         function checkAuth() {
@@ -312,9 +351,29 @@
             document.getElementById('userName').textContent = currentUser.fullName;
         }
 
+        // Load user's attempts first
+        async function loadUserAttempts() {
+            try {
+                const response = await fetch(`/api/attempts/user/${currentUser.id}`);
+                const data = await response.json();
+                
+                if (data.success && data.attempts) {
+                    // Create a map of quizId -> attempt data
+                    data.attempts.forEach(attempt => {
+                        userAttempts[attempt.quizId] = attempt;
+                    });
+                }
+            } catch (error) {
+                console.error('Error loading user attempts:', error);
+            }
+        }
+
         // Load quizzes
         async function loadQuizzes() {
             try {
+                // First load user attempts
+                await loadUserAttempts();
+                
                 const response = await fetch('/api/quizzes');
                 const quizzes = await response.json();
 
@@ -353,8 +412,19 @@
                 : 'MEDIUM';
             const difficultyClass = `difficulty-${difficulty.toLowerCase()}`;
             
+            // Check if user has already completed this quiz
+            const attempt = userAttempts[quiz.id];
+            const isCompleted = !!attempt;
+            
+            const footerContent = isCompleted 
+                ? `<span class="completed-badge">✓ Completed <span class="completed-score">${attempt.percentage || 0}%</span></span>`
+                : `<button class="start-btn" onclick="event.stopPropagation(); startQuiz('${quiz.id}')">Start Quiz</button>`;
+            
+            const cardClass = isCompleted ? 'quiz-card completed' : 'quiz-card';
+            const cardClick = isCompleted ? '' : `onclick="startQuiz('${quiz.id}')"`;
+            
             return `
-                <div class="quiz-card" onclick="startQuiz('${quiz.id}')">
+                <div class="${cardClass}" ${cardClick}>
                     <div class="quiz-header">
                         <div class="quiz-title">${quiz.title || 'Untitled Quiz'}</div>
                         <div class="quiz-description">${quiz.description || 'Test your knowledge with this quiz'}</div>
@@ -381,15 +451,31 @@
                     </div>
                     <div class="quiz-footer">
                         <span class="difficulty-badge ${difficultyClass}">${difficulty}</span>
-                        <button class="start-btn" onclick="event.stopPropagation(); startQuiz('${quiz.id}')">Start Quiz</button>
+                        ${footerContent}
                     </div>
                 </div>
             `;
         }
 
-        function startQuiz(quizId) {
-            // Navigate to the quiz taking page
-            window.location.href = `/takequiz.html?id=${quizId}`;
+        async function startQuiz(quizId) {
+            // Double-check if quiz is already completed before navigation
+            try {
+                const response = await fetch(`/api/attempts/check/${quizId}/${currentUser.id}`);
+                const data = await response.json();
+                
+                if (data.attempted) {
+                    alert(`You have already completed this quiz with a score of ${data.percentage}%`);
+                    loadQuizzes(); // Refresh the page
+                    return;
+                }
+                
+                // Navigate to the quiz taking page
+                window.location.href = `/takequiz.html?id=${quizId}`;
+            } catch (error) {
+                console.error('Error checking attempt:', error);
+                // If check fails, still allow navigation
+                window.location.href = `/takequiz.html?id=${quizId}`;
+            }
         }
 
         function handleLogout() {
